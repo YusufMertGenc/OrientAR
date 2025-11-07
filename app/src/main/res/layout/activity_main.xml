@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <!-- ARCore verisine göre ok ve mesafeyi çizen custom view -->
+    <com.example.ardeneme.ui.OverlayView
+        android:id="@+id/overlayView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="false" />
+
+    <!-- Üstte geospatial debug / bilgi metni -->
+    <TextView
+        android:id="@+id/infoText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#66000000"
+        android:textColor="@android:color/white"
+        android:textSize="14sp"
+        android:padding="8dp"
+        android:text="Initializing ARCore Geospatial..." />
+</FrameLayout>
