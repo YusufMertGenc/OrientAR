@@ -25,7 +25,6 @@ android {
         }
     }
 
-    // Artık viewBinding de kullanmıyoruz, kapatalım
     buildFeatures {
         viewBinding = false
     }
@@ -44,8 +43,12 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
 
-    // Sadece ARCore
+    // ARCore
     implementation("com.google.ar:core:1.51.0")
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    // Sceneform (kamera + AR sahnesi için)
+    implementation("com.gorisse.thomas.sceneform:sceneform:1.23.0")
+
+    // Konum
+    implementation("com.google.android.gms:play-services-location:21.3.0")
 }

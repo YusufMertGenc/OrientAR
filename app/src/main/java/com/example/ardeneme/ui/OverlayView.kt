@@ -16,7 +16,7 @@ class OverlayView @JvmOverloads constructor(
         setShadowLayer(6f, 0f, 0f, Color.BLACK)
     }
 
-    // 3 adet üst üste mavi chevron ok
+    // 3 tane üst üste mavi chevron ok
     private val chevronPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#AA42C3F7")
         style = Paint.Style.STROKE
@@ -25,13 +25,18 @@ class OverlayView @JvmOverloads constructor(
         strokeJoin = Paint.Join.ROUND
     }
 
+    private var deviceAzimuthDeg: Float = 0f        // Pusuladan gelen yön
+    private var bearingToTargetDeg: Float = 0f      // Hedefe olan yön
     private var distanceM: Float = 0f
-    private var turnDeltaDeg: Float = 0f   // -180 .. +180
 
-    /** ARCore'dan gelen uzaklık ve dönüş açısını buraya veriyoruz */
-    fun setNavigation(distanceMeters: Float, deltaDeg: Float) {
+    fun setDeviceAzimuth(deg: Float) {
+        deviceAzimuthDeg = deg
+        invalidate()
+    }
+
+    fun setNavigationData(distanceMeters: Float, bearingToDeg: Float) {
         distanceM = distanceMeters
-        turnDeltaDeg = deltaDeg
+        bearingToTargetDeg = bearingToDeg
         invalidate()
     }
 
@@ -41,9 +46,12 @@ class OverlayView @JvmOverloads constructor(
         val cx = width / 2f
         val baseY = height * 0.70f
 
-        // Ok grubunu hedef yönüne göre döndür
+        // Hedef yönü - baktığın yön = ne kadar dönmen gerek?
+        val delta = normalize(bearingToTargetDeg - deviceAzimuthDeg)
+
+        // Ok grubunu bu açı kadar döndür
         canvas.save()
-        canvas.rotate(turnDeltaDeg, cx, baseY)
+        canvas.rotate(delta, cx, baseY)
 
         val size = width * 0.18f
         val gap = size * 0.40f
@@ -62,10 +70,10 @@ class OverlayView @JvmOverloads constructor(
         }
         canvas.drawText("Distance: $distTxt", 32f, 72f, textPaint)
 
-        // Dönüş yönü
-        val arrowChar = if (turnDeltaDeg >= 0f) "→" else "←"
+        // Sağa mı sola mı dön?
+        val arrowChar = if (delta >= 0f) "→" else "←"
         canvas.drawText(
-            "Turn: $arrowChar ${abs(turnDeltaDeg).toInt()}°",
+            "Turn: $arrowChar ${abs(delta).toInt()}°",
             32f,
             132f,
             textPaint
@@ -79,5 +87,12 @@ class OverlayView @JvmOverloads constructor(
         c.drawLine(cx - half, cy, cx, cy - leg, chevronPaint)
         // sağ bacak
         c.drawLine(cx + half, cy, cx, cy - leg, chevronPaint)
+    }
+
+    private fun normalize(d: Float): Float {
+        var x = d
+        while (x < -180f) x += 360f
+        while (x > 180f) x -= 360f
+        return x
     }
 }
