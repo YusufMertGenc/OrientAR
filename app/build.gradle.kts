@@ -37,7 +37,11 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
 
     // ARCore
-    implementation("com.google.ar:core:1.43.0")
+    implementation("com.google.ar:core:1.41.0")
+    implementation("com.gorisse.thomas.sceneform:core:1.22.0")
+    implementation("com.gorisse.thomas.sceneform:ux:1.22.0")
+
+
 
     // Sceneform (community fork) - ÖNEMLİ KISIM BURASI
     implementation("com.gorisse.thomas.sceneform:core:1.23.0")

@@ -4,21 +4,22 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- ARCore + kamera -->
-    <fragment
+    <!-- ARCore + Kamera: Sceneform ArFragment -->
+    <androidx.fragment.app.FragmentContainerView
         android:id="@+id/ux_fragment"
         android:name="com.google.ar.sceneform.ux.ArFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- Üstte 2D overlay -->
+    <!-- Üstte 2D ok overlay’i (senin OverlayView'in) -->
     <com.example.ardeneme.ui.OverlayView
         android:id="@+id/overlayView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:clickable="false"
-        android:background="@android:color/transparent" />
+        android:background="@android:color/transparent"
+        android:clickable="false" />
 
+    <!-- Lat/Lon/Dist debug metni -->
     <TextView
         android:id="@+id/infoText"
         android:layout_width="match_parent"

@@ -11,13 +11,13 @@ import androidx.core.content.ContextCompat
 import com.example.ardeneme.location.LocationHelper
 import com.example.ardeneme.sensors.CompassHelper
 import com.example.ardeneme.ui.OverlayView
+import com.google.ar.sceneform.Node
 import com.google.ar.sceneform.math.Quaternion
 import com.google.ar.sceneform.math.Vector3
 import com.google.ar.sceneform.rendering.Color
 import com.google.ar.sceneform.rendering.MaterialFactory
 import com.google.ar.sceneform.rendering.ShapeFactory
 import com.google.ar.sceneform.ux.ArFragment
-import com.google.ar.sceneform.Node
 
 class MainActivity : AppCompatActivity() {
 
@@ -32,13 +32,15 @@ class MainActivity : AppCompatActivity() {
     private val targetLat = 39.9036
     private val targetLng = 32.6227
 
-    // Son ölçümler (2D + 3D ok için)
+    // Navigation için son değerler
     private var lastDistanceM: Float = 0f
     private var lastBearingTo: Float = 0f
     private var lastAzimuth: Float = 0f
 
+    // 3D ok node’u
     private var arrowNode: Node? = null
 
+    // Konum izin launcher’ı
     private val locPermLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { result ->
@@ -53,12 +55,45 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // Kamera izin launcher’ı (ARCore’dan önce biz hallediyoruz)
+    private val camPermLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            initArUi()
+            requestLocationPerms()
+        } else {
+            setContentView(R.layout.activity_main)
+            findViewById<TextView>(R.id.infoText).text = "Kamera izni verilmedi."
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Önce kamera iznini hallet → sonra ArFragment’i oluştur
+        if (hasCameraPermission()) {
+            initArUi()
+            requestLocationPerms()
+        } else {
+            // Basit geçici layout, sonra izin gelince initArUi çağrılacak
+            setContentView(R.layout.activity_main)
+            infoText = findViewById(R.id.infoText)
+            infoText.text = "Kamera izni bekleniyor..."
+            camPermLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    private fun hasCameraPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(
+            this, Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    /** Kamera izni geldikten sonra AR UI’ı kur */
+    private fun initArUi() {
         setContentView(R.layout.activity_main)
 
-        // Layout'taki view'lar
         arFragment = supportFragmentManager
             .findFragmentById(R.id.ux_fragment) as ArFragment
 
@@ -68,17 +103,11 @@ class MainActivity : AppCompatActivity() {
         locationHelper = LocationHelper(this)
         compassHelper = CompassHelper(this)
 
-        // 3D oku oluştur
         setup3DArrow()
-
-        // Her frame'de oku kameraya göre güncelle
         setupSceneUpdate()
-
-        // Konum izinlerini iste
-        requestLocationPerms()
     }
 
-    // --- Sensörler ve konum ---
+    // -------- İZİNLER / SENSÖRLER --------
 
     private fun requestLocationPerms() {
         val needFine = ContextCompat.checkSelfPermission(
@@ -102,13 +131,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startSensors() {
-        // Pusula
+        // Pusula → hem OverlayView hem 3D ok bunu kullanıyor
         compassHelper.start { azimuthDeg ->
             lastAzimuth = azimuthDeg
             overlayView.setDeviceAzimuth(azimuthDeg)
         }
 
-        // GPS
+        // Konum → mesafe + bearing
         locationHelper.startLocationUpdates { loc ->
             val res = FloatArray(2)
 
@@ -132,7 +161,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // --- 3D ok ---
+    // -------- 3D OK (Sceneform) --------
 
     private fun setup3DArrow() {
         MaterialFactory.makeOpaqueWithColor(
@@ -160,7 +189,7 @@ class MainActivity : AppCompatActivity() {
 
             val camera = arFragment.arSceneView.scene.camera
 
-            // Kameranın önüne 1 metre taşı
+            // Kameranın önünde 1 metre
             val forward = camera.forward
             val pos = Vector3.add(
                 camera.worldPosition,
@@ -168,7 +197,7 @@ class MainActivity : AppCompatActivity() {
             )
             node.worldPosition = pos
 
-            // Hedef yönü
+            // Hedef yönü = bearingTo - azimuth
             val heading = normalizeAngle(lastBearingTo - lastAzimuth)
 
             node.worldRotation = Quaternion.axisAngle(
@@ -187,7 +216,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        compassHelper.stop()
-        locationHelper.stopLocationUpdates()
+        if (::compassHelper.isInitialized) compassHelper.stop()
+        if (::locationHelper.isInitialized) locationHelper.stopLocationUpdates()
     }
 }
