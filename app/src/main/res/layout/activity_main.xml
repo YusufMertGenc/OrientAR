@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- Üste çizilen ok ve yazılar -->
+    <!-- Üstte 2D overlay -->
     <com.example.ardeneme.ui.OverlayView
         android:id="@+id/overlayView"
         android:layout_width="match_parent"
@@ -27,6 +27,6 @@
         android:textColor="@android:color/white"
         android:textSize="14sp"
         android:padding="8dp"
-        android:text="ARCore nav initializing..." />
+        android:text="AR nav initializing..." />
 
 </FrameLayout>

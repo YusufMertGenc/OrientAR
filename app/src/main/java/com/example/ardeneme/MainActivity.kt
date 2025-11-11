@@ -11,7 +11,6 @@ import androidx.core.content.ContextCompat
 import com.example.ardeneme.location.LocationHelper
 import com.example.ardeneme.sensors.CompassHelper
 import com.example.ardeneme.ui.OverlayView
-import com.google.ar.core.ArCoreApk
 import com.google.ar.sceneform.math.Quaternion
 import com.google.ar.sceneform.math.Vector3
 import com.google.ar.sceneform.rendering.Color
@@ -33,12 +32,11 @@ class MainActivity : AppCompatActivity() {
     private val targetLat = 39.9036
     private val targetLng = 32.6227
 
-    // Heading ve mesafe (Overlay + 3D ok için)
+    // Son ölçümler (2D + 3D ok için)
     private var lastDistanceM: Float = 0f
     private var lastBearingTo: Float = 0f
     private var lastAzimuth: Float = 0f
 
-    // 3D ok
     private var arrowNode: Node? = null
 
     private val locPermLauncher = registerForActivityResult(
@@ -58,17 +56,9 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // ARCore cihazda destekli mi diye kaba kontrol
-        val availability = ArCoreApk.getInstance().checkAvailability(this)
-        if (!availability.isSupported) {
-            setContentView(R.layout.activity_main)
-            infoText = findViewById(R.id.infoText)
-            infoText.text = "Bu cihazda ARCore desteklenmiyor."
-            return
-        }
-
         setContentView(R.layout.activity_main)
 
+        // Layout'taki view'lar
         arFragment = supportFragmentManager
             .findFragmentById(R.id.ux_fragment) as ArFragment
 
@@ -78,60 +68,17 @@ class MainActivity : AppCompatActivity() {
         locationHelper = LocationHelper(this)
         compassHelper = CompassHelper(this)
 
+        // 3D oku oluştur
         setup3DArrow()
+
+        // Her frame'de oku kameraya göre güncelle
         setupSceneUpdate()
+
+        // Konum izinlerini iste
         requestLocationPerms()
     }
 
-    /** 3D oku oluşturup sahneye ekle */
-    private fun setup3DArrow() {
-        // Basit mavi bir “ok” gövdesi: ince silindir
-        MaterialFactory.makeOpaqueWithColor(
-            this,
-            Color(android.graphics.Color.CYAN)
-        ).thenAccept { mat ->
-            val height = 0.3f
-            val radius = 0.02f
-
-            val center = Vector3(0f, height / 2f, 0f)
-            val cylinder = ShapeFactory.makeCylinder(radius, height, center, mat)
-
-            val node = Node().apply {
-                renderable = cylinder
-            }
-
-            // İlk parent: sahnenin kendisi
-            arFragment.arSceneView.scene.addChild(node)
-            arrowNode = node
-        }
-    }
-
-    /** Her frame’de oku kameranın önüne taşı ve yönlendir */
-    private fun setupSceneUpdate() {
-        arFragment.arSceneView.scene.addOnUpdateListener {
-            val node = arrowNode ?: return@addOnUpdateListener
-
-            val scene = arFragment.arSceneView.scene
-            val camera = scene.camera
-
-            // Kameranın önünde 1 metre olsun
-            val forward = camera.forward
-            val pos = Vector3.add(
-                camera.worldPosition,
-                forward.scaled(1.0f)
-            )
-            node.worldPosition = pos
-
-            // Hedef yönü hesapla (Overlay ile aynı mantık)
-            val heading = normalizeAngle(lastBearingTo - lastAzimuth)
-
-            // Y ekseni etrafında döndür
-            node.worldRotation = Quaternion.axisAngle(
-                Vector3(0f, 1f, 0f),
-                -heading  // Sceneform saat yönünü ters alıyor
-            )
-        }
-    }
+    // --- Sensörler ve konum ---
 
     private fun requestLocationPerms() {
         val needFine = ContextCompat.checkSelfPermission(
@@ -161,7 +108,7 @@ class MainActivity : AppCompatActivity() {
             overlayView.setDeviceAzimuth(azimuthDeg)
         }
 
-        // Konum
+        // GPS
         locationHelper.startLocationUpdates { loc ->
             val res = FloatArray(2)
 
@@ -185,10 +132,50 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        compassHelper.stop()
-        locationHelper.stopLocationUpdates()
+    // --- 3D ok ---
+
+    private fun setup3DArrow() {
+        MaterialFactory.makeOpaqueWithColor(
+            this,
+            Color(android.graphics.Color.CYAN)
+        ).thenAccept { mat ->
+            val height = 0.3f
+            val radius = 0.02f
+            val center = Vector3(0f, height / 2f, 0f)
+
+            val cyl = ShapeFactory.makeCylinder(radius, height, center, mat)
+
+            val node = Node().apply {
+                renderable = cyl
+            }
+
+            arFragment.arSceneView.scene.addChild(node)
+            arrowNode = node
+        }
+    }
+
+    private fun setupSceneUpdate() {
+        arFragment.arSceneView.scene.addOnUpdateListener {
+            val node = arrowNode ?: return@addOnUpdateListener
+
+            val camera = arFragment.arSceneView.scene.camera
+
+            // Kameranın önüne 1 metre taşı
+            val forward = camera.forward
+            val pos = Vector3.add(
+                camera.worldPosition,
+                forward.scaled(1.0f)
+            )
+            node.worldPosition = pos
+
+            // Hedef yönü
+            val heading = normalizeAngle(lastBearingTo - lastAzimuth)
+
+            node.worldRotation = Quaternion.axisAngle(
+                Vector3(0f, 1f, 0f),
+                -heading
+            )
+        }
     }
 
     private fun normalizeAngle(a: Float): Float {
@@ -196,5 +183,11 @@ class MainActivity : AppCompatActivity() {
         while (x < -180f) x += 360f
         while (x > 180f) x -= 360f
         return x
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        compassHelper.stop()
+        locationHelper.stopLocationUpdates()
     }
 }
