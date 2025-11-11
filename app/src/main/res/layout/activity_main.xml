@@ -1,23 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- ARCore + Sceneform kamerayı yöneten fragment -->
+    <!-- ARCore + kamera -->
     <fragment
         android:id="@+id/ux_fragment"
         android:name="com.google.ar.sceneform.ux.ArFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- Üstte okları çizeceğimiz view -->
+    <!-- Üste çizilen ok ve yazılar -->
     <com.example.ardeneme.ui.OverlayView
         android:id="@+id/overlayView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:clickable="false" />
+        android:clickable="false"
+        android:background="@android:color/transparent" />
 
-    <!-- Bilgi / debug metni -->
     <TextView
         android:id="@+id/infoText"
         android:layout_width="match_parent"
