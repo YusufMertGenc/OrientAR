@@ -1,30 +1,40 @@
 package com.example.ardeneme.sensors
 
 import android.content.Context
-import android.hardware.*
-import android.view.Surface
-import android.view.WindowManager
-import kotlin.math.round
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import kotlin.math.atan2
+import kotlin.math.sqrt
 
-class CompassHelper(private val context: Context) : SensorEventListener {
+class CompassHelper(context: Context) : SensorEventListener {
 
     private val sensorManager =
         context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
-    private val accel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-    private val magnet = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+    private val accelValues = FloatArray(3)
+    private val magnetValues = FloatArray(3)
 
-    private val R = FloatArray(9)
-    private val I = FloatArray(9)
-    private val gravity = FloatArray(3)
-    private val geomag = FloatArray(3)
+    private var accelReady = false
+    private var magnetReady = false
 
     private var callback: ((Float) -> Unit)? = null
 
     fun start(onAzimuth: (Float) -> Unit) {
         callback = onAzimuth
-        sensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_GAME)
-        sensorManager.registerListener(this, magnet, SensorManager.SENSOR_DELAY_GAME)
+
+        sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.also {
+            sensorManager.registerListener(
+                this, it, SensorManager.SENSOR_DELAY_UI
+            )
+        }
+
+        sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)?.also {
+            sensorManager.registerListener(
+                this, it, SensorManager.SENSOR_DELAY_UI
+            )
+        }
     }
 
     fun stop() {
@@ -32,39 +42,30 @@ class CompassHelper(private val context: Context) : SensorEventListener {
         callback = null
     }
 
-    override fun onSensorChanged(event: SensorEvent?) {
-        event ?: return
+    override fun onSensorChanged(event: SensorEvent) {
         when (event.sensor.type) {
-            Sensor.TYPE_ACCELEROMETER ->
-                System.arraycopy(event.values, 0, gravity, 0, 3)
-            Sensor.TYPE_MAGNETIC_FIELD ->
-                System.arraycopy(event.values, 0, geomag, 0, 3)
+            Sensor.TYPE_ACCELEROMETER -> {
+                System.arraycopy(event.values, 0, accelValues, 0, 3)
+                accelReady = true
+            }
+            Sensor.TYPE_MAGNETIC_FIELD -> {
+                System.arraycopy(event.values, 0, magnetValues, 0, 3)
+                magnetReady = true
+            }
         }
 
-        if (SensorManager.getRotationMatrix(R, I, gravity, geomag)) {
+        if (!accelReady || !magnetReady) return
+
+        val R = FloatArray(9)
+        val I = FloatArray(9)
+        if (SensorManager.getRotationMatrix(R, I, accelValues, magnetValues)) {
             val orientation = FloatArray(3)
             SensorManager.getOrientation(R, orientation)
-
-            var azimuth = Math.toDegrees(orientation[0].toDouble()).toFloat()
-
-            // Ekran dönüşünü telafi et
-            azimuth = (azimuth + getDisplayRotationCompensation()).mod(360f)
-            if (azimuth < 0) azimuth += 360f
-
-            callback?.invoke(round(azimuth))
+            val azimuthRad = orientation[0]
+            val azimuthDeg = Math.toDegrees(azimuthRad.toDouble()).toFloat()
+            callback?.invoke(azimuthDeg)
         }
     }
 
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
-
-    private fun getDisplayRotationCompensation(): Float {
-        val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        val rotation = wm.defaultDisplay.rotation
-        return when (rotation) {
-            Surface.ROTATION_90 -> 90f
-            Surface.ROTATION_180 -> 180f
-            Surface.ROTATION_270 -> 270f
-            else -> 0f
-        }
-    }
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
 }

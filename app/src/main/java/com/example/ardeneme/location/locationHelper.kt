@@ -5,29 +5,26 @@ import android.content.Context
 import android.location.Location
 import com.google.android.gms.location.*
 
-class LocationHelper(private val context: Context) {
+class LocationHelper(context: Context) {
 
     private val client = LocationServices.getFusedLocationProviderClient(context)
 
     private val request = LocationRequest.Builder(
-        Priority.PRIORITY_HIGH_ACCURACY,
-        1000L // 1 saniyede bir konum
-    )
-        .setMinUpdateIntervalMillis(500L)
-        .setMaxUpdateDelayMillis(1500L)
-        .build()
+        Priority.PRIORITY_HIGH_ACCURACY, 2000L
+    ).build()
 
     private var callback: LocationCallback? = null
 
     @SuppressLint("MissingPermission")
-    fun startLocationUpdates(onUpdate: (Location) -> Unit) {
-        val cb = object : LocationCallback() {
+    fun startLocationUpdates(onLocation: (Location) -> Unit) {
+        if (callback != null) return
+
+        callback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
-                result.lastLocation?.let(onUpdate)
+                result.lastLocation?.let(onLocation)
             }
         }
-        callback = cb
-        client.requestLocationUpdates(request, cb, context.mainLooper)
+        client.requestLocationUpdates(request, callback!!, null)
     }
 
     fun stopLocationUpdates() {

@@ -1,3 +1,4 @@
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -5,28 +6,20 @@ plugins {
 
 android {
     namespace = "com.example.ardeneme"
-    compileSdk = 35
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.example.ardeneme"
-        minSdk = 24
-        targetSdk = 35
+        minSdk = 26
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
     }
 
     buildTypes {
-        release {
+        getByName("release") {
             isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
         }
-    }
-
-    buildFeatures {
-        viewBinding = false
     }
 
     compileOptions {
@@ -39,16 +32,18 @@ android {
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
 
     // ARCore
-    implementation("com.google.ar:core:1.51.0")
+    implementation("com.google.ar:core:1.43.0")
 
-    // Sceneform (kamera + AR sahnesi için)
-    implementation("com.gorisse.thomas.sceneform:sceneform:1.23.0")
+    // Sceneform (community fork) - ÖNEMLİ KISIM BURASI
+    implementation("com.gorisse.thomas.sceneform:core:1.23.0")
+    implementation("com.gorisse.thomas.sceneform:ux:1.23.0")
 
-    // Konum
+    // Konum için
     implementation("com.google.android.gms:play-services-location:21.3.0")
 }
+

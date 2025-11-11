@@ -1,96 +1,102 @@
 package com.example.ardeneme.ui
 
 import android.content.Context
-import android.graphics.*
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Path
 import android.util.AttributeSet
 import android.view.View
-import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.sin
 
 class OverlayView @JvmOverloads constructor(
-    context: Context, attrs: AttributeSet? = null
+    context: Context,
+    attrs: AttributeSet? = null
 ) : View(context, attrs) {
 
+    private val arrowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        strokeWidth = 8f
+        color = 0xFF28C3FF.toInt()   // mavi ok
+    }
+
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.WHITE
-        textSize = 48f
-        setShadowLayer(6f, 0f, 0f, Color.BLACK)
+        color = 0xFFFFFFFF.toInt()
+        textSize = 40f
     }
 
-    // 3 tane üst üste mavi chevron ok
-    private val chevronPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = Color.parseColor("#AA42C3F7")
-        style = Paint.Style.STROKE
-        strokeWidth = 28f
-        strokeCap = Paint.Cap.ROUND
-        strokeJoin = Paint.Join.ROUND
-    }
-
-    private var deviceAzimuthDeg: Float = 0f        // Pusuladan gelen yön
-    private var bearingToTargetDeg: Float = 0f      // Hedefe olan yön
     private var distanceM: Float = 0f
+    private var bearingToTarget: Float = 0f
+    private var deviceAzimuth: Float = 0f
 
-    fun setDeviceAzimuth(deg: Float) {
-        deviceAzimuthDeg = deg
+    fun setNavigationData(distanceM: Float, bearingDeg: Float) {
+        this.distanceM = distanceM
+        this.bearingToTarget = bearingDeg
         invalidate()
     }
 
-    fun setNavigationData(distanceMeters: Float, bearingToDeg: Float) {
-        distanceM = distanceMeters
-        bearingToTargetDeg = bearingToDeg
+    fun setDeviceAzimuth(azimuthDeg: Float) {
+        this.deviceAzimuth = azimuthDeg
         invalidate()
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        val cx = width / 2f
-        val baseY = height * 0.70f
-
-        // Hedef yönü - baktığın yön = ne kadar dönmen gerek?
-        val delta = normalize(bearingToTargetDeg - deviceAzimuthDeg)
-
-        // Ok grubunu bu açı kadar döndür
-        canvas.save()
-        canvas.rotate(delta, cx, baseY)
-
-        val size = width * 0.18f
-        val gap = size * 0.40f
-
-        drawChevron(canvas, cx, baseY, size)
-        drawChevron(canvas, cx, baseY - (size + gap), size * 0.85f)
-        drawChevron(canvas, cx, baseY - 2 * (size + gap), size * 0.72f)
-
-        canvas.restore()
-
-        // Mesafe metni
-        val distTxt = if (distanceM < 1000f) {
-            "${distanceM.toInt()} m"
-        } else {
-            String.format("%.2f km", distanceM / 1000f)
-        }
-        canvas.drawText("Distance: $distTxt", 32f, 72f, textPaint)
-
-        // Sağa mı sola mı dön?
-        val arrowChar = if (delta >= 0f) "→" else "←"
+        // Basit metin
         canvas.drawText(
-            "Turn: $arrowChar ${abs(delta).toInt()}°",
-            32f,
-            132f,
+            "Distance: ${distanceM.toInt()} m",
+            40f,
+            height - 120f,
             textPaint
         )
+
+        // Hedef yönü hesabı
+        val heading = normalizeAngle(bearingToTarget - deviceAzimuth)
+
+        // Ok ekranın ortasında olsun
+        val cx = width / 2f
+        val cy = height * 0.75f
+
+        drawArrow(canvas, cx, cy, heading)
     }
 
-    private fun drawChevron(c: Canvas, cx: Float, cy: Float, size: Float) {
-        val half = size * 0.6f
-        val leg = size
-        // sol bacak
-        c.drawLine(cx - half, cy, cx, cy - leg, chevronPaint)
-        // sağ bacak
-        c.drawLine(cx + half, cy, cx, cy - leg, chevronPaint)
+    private fun drawArrow(canvas: Canvas, cx: Float, cy: Float, angleDeg: Float) {
+        val path = Path()
+
+        val len = 180f
+        val rad = Math.toRadians(angleDeg.toDouble())
+
+        // Ucun koordinatı
+        val tipX = cx + len * sin(rad).toFloat()
+        val tipY = cy - len * cos(rad).toFloat()
+
+        // Kuyruk
+        val tailLen = 60f
+        val tailX = cx - tailLen * sin(rad).toFloat()
+        val tailY = cy + tailLen * cos(rad).toFloat()
+
+        // Kanatlar
+        val wing = 35f
+        val leftRad = Math.toRadians((angleDeg - 25).toDouble())
+        val rightRad = Math.toRadians((angleDeg + 25).toDouble())
+
+        val leftX = cx + wing * sin(leftRad).toFloat()
+        val leftY = cy - wing * cos(leftRad).toFloat()
+        val rightX = cx + wing * sin(rightRad).toFloat()
+        val rightY = cy - wing * cos(rightRad).toFloat()
+
+        path.moveTo(tailX, tailY)
+        path.lineTo(leftX, leftY)
+        path.lineTo(tipX, tipY)
+        path.lineTo(rightX, rightY)
+        path.close()
+
+        canvas.drawPath(path, arrowPaint)
     }
 
-    private fun normalize(d: Float): Float {
-        var x = d
+    private fun normalizeAngle(a: Float): Float {
+        var x = a
         while (x < -180f) x += 360f
         while (x > 180f) x -= 360f
         return x
