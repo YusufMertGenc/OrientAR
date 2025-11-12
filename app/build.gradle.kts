@@ -36,7 +36,7 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
 
     // ARCore + Sceneform (community fork). Use ONE version set.
-    implementation("com.google.ar:core:1.41.0")
+    implementation("com.google.ar:core:1.44.0")
     implementation("com.gorisse.thomas.sceneform:core:1.23.0")
     implementation("com.gorisse.thomas.sceneform:ux:1.23.0")
 

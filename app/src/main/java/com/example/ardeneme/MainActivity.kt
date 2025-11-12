@@ -97,7 +97,7 @@ class MainActivity : AppCompatActivity() {
         // ARCore session config — 1) Tercihen listener ile
         arFragment.setOnSessionConfigurationListener { session, config ->
             config.apply {
-                lightEstimationMode = Config.LightEstimationMode.ENVIRONMENTAL_HDR
+                lightEstimationMode = Config.LightEstimationMode.AMBIENT_INTENSITY
                 depthMode = if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC))
                     Config.DepthMode.AUTOMATIC else Config.DepthMode.DISABLED
                 instantPlacementMode = Config.InstantPlacementMode.LOCAL_Y_UP
