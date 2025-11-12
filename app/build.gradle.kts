@@ -30,9 +30,9 @@ android {
     }
 }
 
-configurations.all {
+configurations.configureEach {
     resolutionStrategy {
-        // ARCore’u tek sürüme kilitle (NoSuchMethodError’i bitirir)
+        // APK'ya tek ARCore girsin
         force("com.google.ar:core:1.44.0")
     }
 }
@@ -42,10 +42,10 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
 
-    // ARCore (explicit)
+    // ARCore tek sürüm
     implementation("com.google.ar:core:1.44.0")
 
-    // Sceneform 1.23 — ar:core’u transitive olarak getirmesin diye exclude ET!
+    // Sceneform 1.23 — transitive ar:core gelmesin
     implementation("com.gorisse.thomas.sceneform:core:1.23.0") {
         exclude(group = "com.google.ar", module = "core")
     }

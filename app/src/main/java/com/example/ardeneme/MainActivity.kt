@@ -82,6 +82,8 @@ class MainActivity : AppCompatActivity() {
                 PackageManager.PERMISSION_GRANTED
 
     /** Kamera izni geldikten sonra AR + UI kurulum */
+    // ... importlar ve class alanların aynı
+
     private fun initArUi() {
         setContentView(R.layout.activity_main)
 
@@ -92,27 +94,39 @@ class MainActivity : AppCompatActivity() {
         locationHelper = LocationHelper(this)
         compassHelper  = CompassHelper(this)
 
-        // --- ÖNEMLİ: arSceneView hazır olana kadar bekle ---
-        arFragment.viewLifecycleOwnerLiveData.observe(this, Observer { owner ->
-            if (owner != null) {
-                // 1) HDR’li oturum konfigürasyonu (Sceneform 1.23 ile uyumlu)
-                arFragment.setOnSessionConfigurationListener { session, config ->
-                    config.apply {
-                        lightEstimationMode = Config.LightEstimationMode.ENVIRONMENTAL_HDR
-                        depthMode = if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC))
-                            Config.DepthMode.AUTOMATIC else Config.DepthMode.DISABLED
-                        instantPlacementMode = Config.InstantPlacementMode.LOCAL_Y_UP
-                        focusMode = Config.FocusMode.AUTO
-                        planeFindingMode = Config.PlaneFindingMode.HORIZONTAL
-                    }
-                }
+        // ArFragment'ın view'i oluştuğunda tek sefer konfigürasyon
+        var configuredOnce = false
+        arFragment.viewLifecycleOwnerLiveData.observe(this) { owner ->
+            if (owner == null || configuredOnce) return@observe
 
-                // 2) Sahne hazır: 3D oku kur ve update listener ekle
-                setup3DArrow()
-                setupSceneUpdate()
+            val sceneView = arFragment.arSceneView ?: return@observe
+            val session   = sceneView.session ?: return@observe
+
+            val cfg = com.google.ar.core.Config(session).apply {
+                // *** HDR KAPALI: AMBIENT ***
+                lightEstimationMode = com.google.ar.core.Config.LightEstimationMode.AMBIENT_INTENSITY
+                focusMode           = com.google.ar.core.Config.FocusMode.AUTO
+                instantPlacementMode= com.google.ar.core.Config.InstantPlacementMode.LOCAL_Y_UP
+                planeFindingMode    = com.google.ar.core.Config.PlaneFindingMode.HORIZONTAL
+                depthMode = if (session.isDepthModeSupported(com.google.ar.core.Config.DepthMode.AUTOMATIC))
+                    com.google.ar.core.Config.DepthMode.AUTOMATIC
+                else
+                    com.google.ar.core.Config.DepthMode.DISABLED
             }
-        })
+            session.configure(cfg)
+            configuredOnce = true
+
+            // (isteğe bağlı) Sceneform’un ışık tahminini de kapat (varsa)
+            try { sceneView.javaClass
+                .getMethod("setLightEstimationEnabled", Boolean::class.javaPrimitiveType)
+                .invoke(sceneView, false)
+            } catch (_: Throwable) { /* bazı sürümlerde yok, sorun değil */ }
+
+            setup3DArrow()
+            setupSceneUpdate()
+        }
     }
+
 
     // -------- İzin/Sensörler --------
 
