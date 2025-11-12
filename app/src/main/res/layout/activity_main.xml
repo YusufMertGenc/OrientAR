@@ -10,18 +10,20 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- Senin OverlayView'in (varsa); yoksa bu bloğu silebilirsin -->
-    <com.example.ardeneme.ui.OverlayView
-        android:id="@+id/overlayView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
-    <!-- Basit bilgi yazısı -->
+    <!-- AR üstünde metin -->
     <TextView
         android:id="@+id/infoText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
         android:text="AR starting…"
+        android:textColor="@android:color/white"
         android:textSize="14sp" />
+
+    <!-- 2.5D navigation oku / overlay -->
+    <com.example.ardeneme.ui.OverlayView
+        android:id="@+id/overlayView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
 </FrameLayout>

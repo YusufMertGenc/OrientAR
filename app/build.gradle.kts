@@ -6,6 +6,7 @@ plugins {
 android {
     namespace = "com.example.ardeneme"
     compileSdk = 35
+
     defaultConfig {
         applicationId = "com.example.ardeneme"
         minSdk = 24
@@ -13,7 +14,11 @@ android {
         versionCode = 1
         versionName = "1.0"
     }
-    buildTypes { release { isMinifyEnabled = false } }
+
+    buildTypes {
+        release { isMinifyEnabled = false }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -21,6 +26,7 @@ android {
     kotlinOptions { jvmTarget = "17" }
 }
 
+// ARCore sürümünü kilitle – SceneView ile çakışmasın
 configurations.configureEach {
     resolutionStrategy { force("com.google.ar:core:1.44.0") }
 }
@@ -28,11 +34,10 @@ configurations.configureEach {
 dependencies {
     implementation("com.google.ar:core:1.44.0")
 
-    // Sadece bunu bırak
-    val sceneviewVersion = "2.3.0" // 2.3.0 da olur
+    // SceneView – View tabanlı AR
+    val sceneviewVersion = "2.3.0"
     implementation("io.github.sceneview:arsceneview:$sceneviewVersion")
     implementation("io.github.sceneview:sceneview:$sceneviewVersion")
-
 
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.appcompat:appcompat:1.7.0")

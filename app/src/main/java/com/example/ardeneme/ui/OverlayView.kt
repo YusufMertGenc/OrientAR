@@ -6,99 +6,93 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.util.AttributeSet
 import android.view.View
+import androidx.core.content.ContextCompat
+import com.example.ardeneme.R
 import kotlin.math.cos
 import kotlin.math.sin
 
 class OverlayView @JvmOverloads constructor(
     context: Context,
-    attrs: AttributeSet? = null
-) : View(context, attrs) {
+    attrs: AttributeSet? = null,
+    defStyleAttr: Int = 0
+) : View(context, attrs, defStyleAttr) {
+
+    private var distanceM: Float = 0f
+    private var bearingTo: Float = 0f
+    private var deviceAzimuth: Float = 0f
+    private var arrowHeading: Float = 0f   // ekranda çizilecek ok açısı
 
     private val arrowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = ContextCompat.getColor(context, android.R.color.holo_purple)
         style = Paint.Style.FILL
-        strokeWidth = 8f
-        color = 0xFF28C3FF.toInt()   // mavi ok
     }
 
     private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = 0xFFFFFFFF.toInt()
+        color = ContextCompat.getColor(context, android.R.color.white)
         textSize = 40f
     }
 
-    private var distanceM: Float = 0f
-    private var bearingToTarget: Float = 0f
-    private var deviceAzimuth: Float = 0f
+    private val arrowPath = Path()
 
-    fun setNavigationData(distanceM: Float, bearingDeg: Float) {
-        this.distanceM = distanceM
-        this.bearingToTarget = bearingDeg
+    fun setNavigationData(distance: Float, bearing: Float) {
+        distanceM = distance
+        bearingTo = bearing
         invalidate()
     }
 
-    fun setDeviceAzimuth(azimuthDeg: Float) {
-        this.deviceAzimuth = azimuthDeg
+    fun setDeviceAzimuth(azimuth: Float) {
+        deviceAzimuth = azimuth
+        invalidate()
+    }
+
+    fun setArrowHeading(headingDeg: Float) {
+        arrowHeading = headingDeg
         invalidate()
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
-        // Basit metin
-        canvas.drawText(
-            "Distance: ${distanceM.toInt()} m",
-            40f,
-            height - 120f,
-            textPaint
-        )
-
-        // Hedef yönü hesabı
-        val heading = normalizeAngle(bearingToTarget - deviceAzimuth)
-
-        // Ok ekranın ortasında olsun
         val cx = width / 2f
-        val cy = height * 0.75f
+        val cy = height * 0.75f   // oku biraz aşağıya koy
 
-        drawArrow(canvas, cx, cy, heading)
-    }
+        // --- Ok geometrisi (bir üçgen gibi) ---
+        val arrowLength = width * 0.15f
+        val arrowWidth  = arrowLength * 0.5f
 
-    private fun drawArrow(canvas: Canvas, cx: Float, cy: Float, angleDeg: Float) {
-        val path = Path()
+        // heading’i radyana çevir
+        val rad = Math.toRadians(arrowHeading.toDouble())
+        val dirX = cos(rad).toFloat()
+        val dirY = sin(rad).toFloat()
 
-        val len = 180f
-        val rad = Math.toRadians(angleDeg.toDouble())
+        // Uç noktası (ileri)
+        val tipX = cx + dirX * arrowLength
+        val tipY = cy - dirY * arrowLength
 
-        // Ucun koordinatı
-        val tipX = cx + len * sin(rad).toFloat()
-        val tipY = cy - len * cos(rad).toFloat()
+        // Kuyruk noktası
+        val tailX = cx - dirX * (arrowLength * 0.4f)
+        val tailY = cy + dirY * (arrowLength * 0.4f)
 
-        // Kuyruk
-        val tailLen = 60f
-        val tailX = cx - tailLen * sin(rad).toFloat()
-        val tailY = cy + tailLen * cos(rad).toFloat()
+        // Ok genişliği için sağ/sol normal
+        val nx = -dirY
+        val ny = dirX
 
-        // Kanatlar
-        val wing = 35f
-        val leftRad = Math.toRadians((angleDeg - 25).toDouble())
-        val rightRad = Math.toRadians((angleDeg + 25).toDouble())
+        val leftX  = tailX + nx * (arrowWidth / 2f)
+        val leftY  = tailY + ny * (arrowWidth / 2f)
+        val rightX = tailX - nx * (arrowWidth / 2f)
+        val rightY = tailY - ny * (arrowWidth / 2f)
 
-        val leftX = cx + wing * sin(leftRad).toFloat()
-        val leftY = cy - wing * cos(leftRad).toFloat()
-        val rightX = cx + wing * sin(rightRad).toFloat()
-        val rightY = cy - wing * cos(rightRad).toFloat()
+        arrowPath.reset()
+        arrowPath.moveTo(tipX, tipY)
+        arrowPath.lineTo(leftX, leftY)
+        arrowPath.lineTo(rightX, rightY)
+        arrowPath.close()
 
-        path.moveTo(tailX, tailY)
-        path.lineTo(leftX, leftY)
-        path.lineTo(tipX, tipY)
-        path.lineTo(rightX, rightY)
-        path.close()
+        // Ok çiz
+        canvas.drawPath(arrowPath, arrowPaint)
 
-        canvas.drawPath(path, arrowPaint)
-    }
-
-    private fun normalizeAngle(a: Float): Float {
-        var x = a
-        while (x < -180f) x += 360f
-        while (x > 180f) x -= 360f
-        return x
+        // Yazı: mesafe & global bearing
+        val text = "Heading: ${arrowHeading.toInt()}°   Dist: ${distanceM.toInt()} m"
+        canvas.drawText(text, 40f, 80f, textPaint)
     }
 }
