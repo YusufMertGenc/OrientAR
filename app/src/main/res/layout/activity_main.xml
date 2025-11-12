@@ -1,33 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/ux_fragment"
-        android:name="com.google.ar.sceneform.ux.ArFragment"
+    <!-- AR kamera + sahne -->
+    <io.github.sceneview.ar.ARSceneView
+        android:id="@+id/arView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-
-
-
-
-
-
-    <!-- 2D Overlay ok + yazılar -->
+    <!-- Senin OverlayView'in (varsa); yoksa bu bloğu silebilirsin -->
     <com.example.ardeneme.ui.OverlayView
         android:id="@+id/overlayView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- Bilgi yazısı -->
+    <!-- Basit bilgi yazısı -->
     <TextView
         android:id="@+id/infoText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp" />
-
+        android:text="AR starting…"
+        android:textSize="14sp" />
 </FrameLayout>
