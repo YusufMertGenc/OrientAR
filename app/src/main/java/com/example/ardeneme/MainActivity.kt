@@ -72,9 +72,7 @@ class MainActivity : AppCompatActivity() {
             requestLocationPerms()
         } else {
             setContentView(R.layout.activity_main)
-            findViewById<TextView>(R.id.infoText).apply {
-                text = "Kamera izni bekleniyor…"
-            }
+            findViewById<TextView>(R.id.infoText).text = "Kamera izni bekleniyor…"
             camPermLauncher.launch(Manifest.permission.CAMERA)
         }
     }
@@ -94,7 +92,7 @@ class MainActivity : AppCompatActivity() {
         locationHelper = LocationHelper(this)
         compassHelper = CompassHelper(this)
 
-        // ARCore session config — 1) Tercihen listener ile
+        // HDR CRASH ÖNLEMİ: AMBIENT_INTENSITY kullan
         arFragment.setOnSessionConfigurationListener { session, config ->
             config.apply {
                 lightEstimationMode = Config.LightEstimationMode.AMBIENT_INTENSITY
@@ -106,13 +104,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // 2) Emniyet kemeri: bazı cihazlarda listener geç kalırsa bir kez daha configure et
+        // Bazı cihazlarda listener geç kalırsa: bir defalık manuel configure (YİNE AMBIENT!)
         var configuredOnce = false
         arFragment.arSceneView.scene.addOnUpdateListener {
             if (configuredOnce) return@addOnUpdateListener
             val session = arFragment.arSceneView.session ?: return@addOnUpdateListener
             val cfg = Config(session).apply {
-                lightEstimationMode = Config.LightEstimationMode.ENVIRONMENTAL_HDR
+                lightEstimationMode = Config.LightEstimationMode.AMBIENT_INTENSITY
                 depthMode = if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC))
                     Config.DepthMode.AUTOMATIC else Config.DepthMode.DISABLED
                 instantPlacementMode = Config.InstantPlacementMode.LOCAL_Y_UP
@@ -122,6 +120,8 @@ class MainActivity : AppCompatActivity() {
             session.configure(cfg)
             configuredOnce = true
         }
+
+
 
         setup3DArrow()
         setupSceneUpdate()
