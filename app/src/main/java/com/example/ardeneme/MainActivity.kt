@@ -29,25 +29,24 @@ class MainActivity : AppCompatActivity() {
     private lateinit var locationHelper: LocationHelper
     private lateinit var compassHelper: CompassHelper
 
-    // Hedef koordinat (örnek)
+    // Örnek hedef koordinat
     private val targetLat = 39.9036
     private val targetLng = 32.6227
 
-    // Son navigation değerleri
+    // Navigation state
     private var lastDistanceM = 0f
     private var lastBearingTo = 0f
     private var lastAzimuth = 0f
 
-    // 3D ok
+    // 3D ok node'u
     private var arrowNode: Node? = null
 
     // Konum izinleri
     private val locPermLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { result ->
-        val granted =
-            result[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-                    result[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        val granted = result[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                result[Manifest.permission.ACCESS_COARSE_LOCATION] == true
         if (granted) startSensors() else infoText.text = "Konum izni verilmedi."
     }
 
@@ -92,24 +91,14 @@ class MainActivity : AppCompatActivity() {
         locationHelper = LocationHelper(this)
         compassHelper = CompassHelper(this)
 
-        // HDR CRASH ÖNLEMİ: AMBIENT_INTENSITY kullan
-        arFragment.setOnSessionConfigurationListener { session, config ->
-            config.apply {
-                lightEstimationMode = Config.LightEstimationMode.AMBIENT_INTENSITY
-                depthMode = if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC))
-                    Config.DepthMode.AUTOMATIC else Config.DepthMode.DISABLED
-                instantPlacementMode = Config.InstantPlacementMode.LOCAL_Y_UP
-                focusMode = Config.FocusMode.AUTO
-                planeFindingMode = Config.PlaneFindingMode.HORIZONTAL
-            }
-        }
-
-        // Bazı cihazlarda listener geç kalırsa: bir defalık manuel configure (YİNE AMBIENT!)
+        // >>> Sceneform 1.22 için: Oturumu elle configure edeceğiz (listener yok)
         var configuredOnce = false
         arFragment.arSceneView.scene.addOnUpdateListener {
             if (configuredOnce) return@addOnUpdateListener
             val session = arFragment.arSceneView.session ?: return@addOnUpdateListener
+
             val cfg = Config(session).apply {
+                // HDR KAPALI: AMBIENT_INTENSITY
                 lightEstimationMode = Config.LightEstimationMode.AMBIENT_INTENSITY
                 depthMode = if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC))
                     Config.DepthMode.AUTOMATIC else Config.DepthMode.DISABLED
@@ -120,8 +109,6 @@ class MainActivity : AppCompatActivity() {
             session.configure(cfg)
             configuredOnce = true
         }
-
-
 
         setup3DArrow()
         setupSceneUpdate()
@@ -194,7 +181,7 @@ class MainActivity : AppCompatActivity() {
             val node = arrowNode ?: return@addOnUpdateListener
             val camera = arFragment.arSceneView.scene.camera
 
-            // Oku kameranın 1 m önünde ve göğüs hizasında tut
+            // Oku kameranın ~1 m önünde tut
             val forward = camera.forward
             val pos = Vector3.add(camera.worldPosition, forward.scaled(1.0f))
             node.worldPosition = Vector3(pos.x, camera.worldPosition.y - 0.1f, pos.z)

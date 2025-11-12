@@ -1,29 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Sceneform ArFragment host -->
-    <fragment
+    <!-- Sceneform AR host -->
+    <androidx.fragment.app.FragmentContainerView
         android:id="@+id/ux_fragment"
         android:name="com.google.ar.sceneform.ux.ArFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-
-    <!-- Your HUD overlay -->
+    <!-- 2D Overlay ok + yazılar -->
     <com.example.ardeneme.ui.OverlayView
         android:id="@+id/overlayView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:clickable="false" />
+        android:layout_height="match_parent" />
 
+    <!-- Bilgi yazısı -->
     <TextView
         android:id="@+id/infoText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        android:textColor="@android:color/white"
-        android:textSize="14sp" />
+        android:textColor="#FFFFFF"
+        android:textSize="16sp" />
+
 </FrameLayout>

@@ -30,18 +30,30 @@ android {
     }
 }
 
+configurations.all {
+    resolutionStrategy {
+        // ARCore’u tek sürüme kilitle (NoSuchMethodError’i bitirir)
+        force("com.google.ar:core:1.44.0")
+    }
+}
+
 dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
 
-    // ARCore
-    implementation("com.google.ar:core:1.44.0") // veya 1.45.0 mevcutsa onu
+    // ARCore (explicit)
+    implementation("com.google.ar:core:1.44.0")
 
-    // Sceneform (1.22.0 = HDR çağrısı yok, crash yok)
-    implementation("com.gorisse.thomas.sceneform:core:1.22.0")
-    implementation("com.gorisse.thomas.sceneform:ux:1.22.0")
+    // Sceneform 1.23 — ar:core’u transitive olarak getirmesin diye exclude ET!
+    implementation("com.gorisse.thomas.sceneform:core:1.23.0") {
+        exclude(group = "com.google.ar", module = "core")
+    }
+    implementation("com.gorisse.thomas.sceneform:ux:1.23.0") {
+        exclude(group = "com.google.ar", module = "core")
+    }
 
-    // Konum
     implementation("com.google.android.gms:play-services-location:21.3.0")
 }
+
+
