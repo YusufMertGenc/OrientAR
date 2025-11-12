@@ -18,11 +18,11 @@
 
     <application
         android:allowBackup="true"
+        android:hardwareAccelerated="true"
         android:label="AR Cam Nav"
         android:supportsRtl="true"
         android:theme="@style/Theme.Material3.DayNight.NoActionBar">
 
-        <!-- ARCore meta-data -->
         <meta-data
             android:name="com.google.ar.core"
             android:value="required" />
@@ -39,4 +39,5 @@
         </activity>
 
     </application>
+
 </manifest>

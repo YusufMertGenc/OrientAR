@@ -1,4 +1,3 @@
-
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -36,18 +35,11 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
 
-    // ARCore
+    // ARCore + Sceneform (community fork). Use ONE version set.
     implementation("com.google.ar:core:1.41.0")
-    implementation("com.gorisse.thomas.sceneform:core:1.22.0")
-    implementation("com.gorisse.thomas.sceneform:ux:1.22.0")
-
-
-
-    // Sceneform (community fork) - ÖNEMLİ KISIM BURASI
     implementation("com.gorisse.thomas.sceneform:core:1.23.0")
     implementation("com.gorisse.thomas.sceneform:ux:1.23.0")
 
-    // Konum için
+    // Location
     implementation("com.google.android.gms:play-services-location:21.3.0")
 }
-

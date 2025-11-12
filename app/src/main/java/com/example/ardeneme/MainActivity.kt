@@ -11,6 +11,7 @@ import androidx.core.content.ContextCompat
 import com.example.ardeneme.location.LocationHelper
 import com.example.ardeneme.sensors.CompassHelper
 import com.example.ardeneme.ui.OverlayView
+import com.google.ar.core.Config
 import com.google.ar.sceneform.Node
 import com.google.ar.sceneform.math.Quaternion
 import com.google.ar.sceneform.math.Vector3
@@ -28,34 +29,29 @@ class MainActivity : AppCompatActivity() {
     private lateinit var locationHelper: LocationHelper
     private lateinit var compassHelper: CompassHelper
 
-    // Hedef nokta
+    // Hedef koordinat (örnek)
     private val targetLat = 39.9036
     private val targetLng = 32.6227
 
-    // Navigation için son değerler
-    private var lastDistanceM: Float = 0f
-    private var lastBearingTo: Float = 0f
-    private var lastAzimuth: Float = 0f
+    // Son navigation değerleri
+    private var lastDistanceM = 0f
+    private var lastBearingTo = 0f
+    private var lastAzimuth = 0f
 
-    // 3D ok node’u
+    // 3D ok
     private var arrowNode: Node? = null
 
-    // Konum izin launcher’ı
+    // Konum izinleri
     private val locPermLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { result ->
         val granted =
             result[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
                     result[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-
-        if (granted) {
-            startSensors()
-        } else {
-            infoText.text = "Konum izni verilmedi."
-        }
+        if (granted) startSensors() else infoText.text = "Konum izni verilmedi."
     }
 
-    // Kamera izin launcher’ı (ARCore’dan önce biz hallediyoruz)
+    // Kamera izni
     private val camPermLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -71,49 +67,72 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Önce kamera iznini hallet → sonra ArFragment’i oluştur
         if (hasCameraPermission()) {
             initArUi()
             requestLocationPerms()
         } else {
-            // Basit geçici layout, sonra izin gelince initArUi çağrılacak
             setContentView(R.layout.activity_main)
-            infoText = findViewById(R.id.infoText)
-            infoText.text = "Kamera izni bekleniyor..."
+            findViewById<TextView>(R.id.infoText).apply {
+                text = "Kamera izni bekleniyor…"
+            }
             camPermLauncher.launch(Manifest.permission.CAMERA)
         }
     }
 
-    private fun hasCameraPermission(): Boolean {
-        return ContextCompat.checkSelfPermission(
-            this, Manifest.permission.CAMERA
-        ) == PackageManager.PERMISSION_GRANTED
-    }
+    private fun hasCameraPermission(): Boolean =
+        ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) ==
+                PackageManager.PERMISSION_GRANTED
 
-    /** Kamera izni geldikten sonra AR UI’ı kur */
+    /** Kamera izni geldikten sonra AR + UI kurulum */
     private fun initArUi() {
         setContentView(R.layout.activity_main)
 
-        arFragment = supportFragmentManager
-            .findFragmentById(R.id.ux_fragment) as ArFragment
-
+        arFragment = supportFragmentManager.findFragmentById(R.id.ux_fragment) as ArFragment
         overlayView = findViewById(R.id.overlayView)
         infoText = findViewById(R.id.infoText)
 
         locationHelper = LocationHelper(this)
         compassHelper = CompassHelper(this)
 
+        // ARCore session config — 1) Tercihen listener ile
+        arFragment.setOnSessionConfigurationListener { session, config ->
+            config.apply {
+                lightEstimationMode = Config.LightEstimationMode.ENVIRONMENTAL_HDR
+                depthMode = if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC))
+                    Config.DepthMode.AUTOMATIC else Config.DepthMode.DISABLED
+                instantPlacementMode = Config.InstantPlacementMode.LOCAL_Y_UP
+                focusMode = Config.FocusMode.AUTO
+                planeFindingMode = Config.PlaneFindingMode.HORIZONTAL
+            }
+        }
+
+        // 2) Emniyet kemeri: bazı cihazlarda listener geç kalırsa bir kez daha configure et
+        var configuredOnce = false
+        arFragment.arSceneView.scene.addOnUpdateListener {
+            if (configuredOnce) return@addOnUpdateListener
+            val session = arFragment.arSceneView.session ?: return@addOnUpdateListener
+            val cfg = Config(session).apply {
+                lightEstimationMode = Config.LightEstimationMode.ENVIRONMENTAL_HDR
+                depthMode = if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC))
+                    Config.DepthMode.AUTOMATIC else Config.DepthMode.DISABLED
+                instantPlacementMode = Config.InstantPlacementMode.LOCAL_Y_UP
+                focusMode = Config.FocusMode.AUTO
+                planeFindingMode = Config.PlaneFindingMode.HORIZONTAL
+            }
+            session.configure(cfg)
+            configuredOnce = true
+        }
+
         setup3DArrow()
         setupSceneUpdate()
     }
 
-    // -------- İZİNLER / SENSÖRLER --------
+    // -------- İzin/Sensörler --------
 
     private fun requestLocationPerms() {
         val needFine = ContextCompat.checkSelfPermission(
             this, Manifest.permission.ACCESS_FINE_LOCATION
         ) != PackageManager.PERMISSION_GRANTED
-
         val needCoarse = ContextCompat.checkSelfPermission(
             this, Manifest.permission.ACCESS_COARSE_LOCATION
         ) != PackageManager.PERMISSION_GRANTED
@@ -125,85 +144,64 @@ class MainActivity : AppCompatActivity() {
                     Manifest.permission.ACCESS_COARSE_LOCATION
                 )
             )
-        } else {
-            startSensors()
-        }
+        } else startSensors()
     }
 
     private fun startSensors() {
-        // Pusula → hem OverlayView hem 3D ok bunu kullanıyor
+        // Pusula
         compassHelper.start { azimuthDeg ->
             lastAzimuth = azimuthDeg
             overlayView.setDeviceAzimuth(azimuthDeg)
         }
 
-        // Konum → mesafe + bearing
+        // Konum
         locationHelper.startLocationUpdates { loc ->
             val res = FloatArray(2)
-
             Location.distanceBetween(
                 loc.latitude, loc.longitude,
                 targetLat, targetLng,
                 res
             )
+            lastDistanceM = res[0]
+            lastBearingTo = res[1]
 
-            val distanceM = res[0]
-            val bearingTo = res[1]
-
-            lastDistanceM = distanceM
-            lastBearingTo = bearingTo
-
-            overlayView.setNavigationData(distanceM, bearingTo)
-
-            infoText.text = "Lat:${"%.5f".format(loc.latitude)} " +
-                    "Lon:${"%.5f".format(loc.longitude)} " +
-                    "Dist:${distanceM.toInt()}m"
+            overlayView.setNavigationData(lastDistanceM, lastBearingTo)
+            infoText.text = "Lat:${"%.5f".format(loc.latitude)}  " +
+                    "Lon:${"%.5f".format(loc.longitude)}  " +
+                    "Dist:${lastDistanceM.toInt()} m"
         }
     }
 
-    // -------- 3D OK (Sceneform) --------
+    // -------- 3D Ok --------
 
     private fun setup3DArrow() {
         MaterialFactory.makeOpaqueWithColor(
             this,
             Color(android.graphics.Color.CYAN)
         ).thenAccept { mat ->
-            val height = 0.3f
+            val height = 0.30f
             val radius = 0.02f
             val center = Vector3(0f, height / 2f, 0f)
 
             val cyl = ShapeFactory.makeCylinder(radius, height, center, mat)
-
-            val node = Node().apply {
-                renderable = cyl
-            }
-
-            arFragment.arSceneView.scene.addChild(node)
-            arrowNode = node
+            arrowNode = Node().apply { renderable = cyl }
+            arFragment.arSceneView.scene.addChild(arrowNode)
         }
     }
 
     private fun setupSceneUpdate() {
         arFragment.arSceneView.scene.addOnUpdateListener {
             val node = arrowNode ?: return@addOnUpdateListener
-
             val camera = arFragment.arSceneView.scene.camera
 
-            // Kameranın önünde 1 metre
+            // Oku kameranın 1 m önünde ve göğüs hizasında tut
             val forward = camera.forward
-            val pos = Vector3.add(
-                camera.worldPosition,
-                forward.scaled(1.0f)
-            )
-            node.worldPosition = pos
+            val pos = Vector3.add(camera.worldPosition, forward.scaled(1.0f))
+            node.worldPosition = Vector3(pos.x, camera.worldPosition.y - 0.1f, pos.z)
 
-            // Hedef yönü = bearingTo - azimuth
+            // Hedef yönü = bearing - azimuth
             val heading = normalizeAngle(lastBearingTo - lastAzimuth)
-
-            node.worldRotation = Quaternion.axisAngle(
-                Vector3(0f, 1f, 0f),
-                -heading
-            )
+            node.worldRotation = Quaternion.axisAngle(Vector3(0f, 1f, 0f), -heading)
         }
     }
 
