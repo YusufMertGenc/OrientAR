@@ -8,7 +8,6 @@ import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.Observer
 import com.example.ardeneme.location.LocationHelper
 import com.example.ardeneme.sensors.CompassHelper
 import com.example.ardeneme.ui.OverlayView
@@ -30,7 +29,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var locationHelper: LocationHelper
     private lateinit var compassHelper: CompassHelper
 
-    // Örnek hedef koordinat
+    // Hedef örnek koordinat
     private val targetLat = 39.9036
     private val targetLng = 32.6227
 
@@ -39,7 +38,7 @@ class MainActivity : AppCompatActivity() {
     private var lastBearingTo = 0f
     private var lastAzimuth = 0f
 
-    // 3D ok node'u
+    // 3D ok
     private var arrowNode: Node? = null
 
     // Konum izinleri
@@ -82,54 +81,35 @@ class MainActivity : AppCompatActivity() {
                 PackageManager.PERMISSION_GRANTED
 
     /** Kamera izni geldikten sonra AR + UI kurulum */
-    // ... importlar ve class alanların aynı
-
     private fun initArUi() {
         setContentView(R.layout.activity_main)
 
         arFragment = supportFragmentManager.findFragmentById(R.id.ux_fragment) as ArFragment
         overlayView = findViewById(R.id.overlayView)
-        infoText = findViewById(R.id.infoText)
+        infoText    = findViewById(R.id.infoText)
 
         locationHelper = LocationHelper(this)
         compassHelper  = CompassHelper(this)
 
-        // ArFragment'ın view'i oluştuğunda tek sefer konfigürasyon
-        var configuredOnce = false
-        arFragment.viewLifecycleOwnerLiveData.observe(this) { owner ->
-            if (owner == null || configuredOnce) return@observe
-
-            val sceneView = arFragment.arSceneView ?: return@observe
-            val session   = sceneView.session ?: return@observe
-
-            val cfg = com.google.ar.core.Config(session).apply {
-                // *** HDR KAPALI: AMBIENT ***
-                lightEstimationMode = com.google.ar.core.Config.LightEstimationMode.AMBIENT_INTENSITY
-                focusMode           = com.google.ar.core.Config.FocusMode.AUTO
-                instantPlacementMode= com.google.ar.core.Config.InstantPlacementMode.LOCAL_Y_UP
-                planeFindingMode    = com.google.ar.core.Config.PlaneFindingMode.HORIZONTAL
-                depthMode = if (session.isDepthModeSupported(com.google.ar.core.Config.DepthMode.AUTOMATIC))
-                    com.google.ar.core.Config.DepthMode.AUTOMATIC
-                else
-                    com.google.ar.core.Config.DepthMode.DISABLED
+        // *** KRİTİK: Session configure EDİLMEDEN ÖNCE HDR'ı kapat ***
+        arFragment.setOnSessionConfigurationListener { session, config ->
+            config.apply {
+                lightEstimationMode = Config.LightEstimationMode.AMBIENT_INTENSITY // HDR YOK
+                focusMode           = Config.FocusMode.AUTO
+                instantPlacementMode= Config.InstantPlacementMode.LOCAL_Y_UP
+                planeFindingMode    = Config.PlaneFindingMode.HORIZONTAL
+                depthMode = if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC))
+                    Config.DepthMode.AUTOMATIC else Config.DepthMode.DISABLED
             }
-            session.configure(cfg)
-            configuredOnce = true
-
-            // (isteğe bağlı) Sceneform’un ışık tahminini de kapat (varsa)
-            try { sceneView.javaClass
-                .getMethod("setLightEstimationEnabled", Boolean::class.javaPrimitiveType)
-                .invoke(sceneView, false)
-            } catch (_: Throwable) { /* bazı sürümlerde yok, sorun değil */ }
-
-            setup3DArrow()
-            setupSceneUpdate()
+            // extension kullanmadan doğrudan uygula
+            session.configure(config)
         }
+
+        setup3DArrow()
+        setupSceneUpdate()
     }
 
-
     // -------- İzin/Sensörler --------
-
     private fun requestLocationPerms() {
         val needFine = ContextCompat.checkSelfPermission(
             this, Manifest.permission.ACCESS_FINE_LOCATION
@@ -163,8 +143,8 @@ class MainActivity : AppCompatActivity() {
                 targetLat, targetLng,
                 res
             )
-            lastDistanceM  = res[0]
-            lastBearingTo  = res[1]
+            lastDistanceM = res[0]
+            lastBearingTo = res[1]
 
             overlayView.setNavigationData(lastDistanceM, lastBearingTo)
             infoText.text = "Lat:${"%.5f".format(loc.latitude)}  " +
@@ -174,27 +154,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     // -------- 3D Ok --------
-
     private fun setup3DArrow() {
         val sceneView = arFragment.arSceneView ?: return
-        MaterialFactory.makeOpaqueWithColor(
-            this,
-            Color(android.graphics.Color.CYAN)
-        ).thenAccept { mat ->
-            val height = 0.30f
-            val radius = 0.02f
-            val center = Vector3(0f, height / 2f, 0f)
+        MaterialFactory.makeOpaqueWithColor(this, Color(android.graphics.Color.CYAN))
+            .thenAccept { mat ->
+                val height = 0.30f
+                val radius = 0.02f
+                val center = Vector3(0f, height / 2f, 0f)
 
-            val cyl = ShapeFactory.makeCylinder(radius, height, center, mat)
-            arrowNode = Node().apply { renderable = cyl }
-            sceneView.scene.addChild(arrowNode)
-        }
+                val cyl = ShapeFactory.makeCylinder(radius, height, center, mat)
+                arrowNode = Node().apply { renderable = cyl }
+                sceneView.scene.addChild(arrowNode)
+            }
     }
 
     private fun setupSceneUpdate() {
         val sceneView = arFragment.arSceneView ?: return
         sceneView.scene.addOnUpdateListener {
-            val node   = arrowNode ?: return@addOnUpdateListener
+            val node = arrowNode ?: return@addOnUpdateListener
             val camera = sceneView.scene.camera
 
             // Oku kameranın ~1 m önünde tut
@@ -211,7 +188,7 @@ class MainActivity : AppCompatActivity() {
     private fun normalizeAngle(a: Float): Float {
         var x = a
         while (x < -180f) x += 360f
-        while (x > 180f)  x -= 360f
+        while (x > 180f) x -= 360f
         return x
     }
 
