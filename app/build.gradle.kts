@@ -3,7 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-android {
+android { //testarda
     namespace = "com.example.ardeneme"
     compileSdk = 35
 
