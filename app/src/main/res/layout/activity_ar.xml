@@ -3,29 +3,27 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- ARCore kamera + AR sahnesi -->
-    <fragment
-        android:id="@+id/arFragment"
-        android:name="com.google.ar.sceneform.ux.ArFragment"
+    <io.github.sceneview.ar.ARSceneView
+        android:id="@+id/arView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- Üstüne çizilen oklar -->
+    <!-- Bilgi Paneli -->
+    <TextView
+        android:id="@+id/infoText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:text="AR başlatılıyor..."
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:background="#80000000"
+        android:padding="8dp"/>
+
+    <!-- Okların Çizildiği Katman -->
     <com.example.ardeneme.ui.OverlayView
         android:id="@+id/overlayView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:clickable="false" />
-
-    <!-- Üstte debug/info metni -->
-    <TextView
-        android:id="@+id/infoText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="#66000000"
-        android:textColor="@android:color/white"
-        android:textSize="14sp"
-        android:padding="8dp"
-        android:text="Initializing ARCore Nav..." />
+        android:layout_height="match_parent" />
 
 </FrameLayout>
