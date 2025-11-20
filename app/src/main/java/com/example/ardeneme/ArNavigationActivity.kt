@@ -11,13 +11,12 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.ardeneme.location.LocationHelper
 import com.example.ardeneme.sensors.CompassHelper
-// SceneView 2.0.3 Importları
 import io.github.sceneview.ar.ARSceneView
 import io.github.sceneview.node.ViewNode
 import io.github.sceneview.math.Position
 import io.github.sceneview.math.Rotation
 import com.google.ar.core.Config
-import com.google.ar.sceneform.rendering.ViewAttachmentManager   // ⬅️ yeni import
+import com.google.ar.sceneform.rendering.ViewAttachmentManager
 import kotlinx.coroutines.launch
 
 class ArNavigationActivity : AppCompatActivity() {
@@ -27,14 +26,15 @@ class ArNavigationActivity : AppCompatActivity() {
 
     private lateinit var locationHelper: LocationHelper
     private lateinit var compassHelper: CompassHelper
-
-    // ViewNode için AttachmentManager
     private lateinit var viewAttachmentManager: ViewAttachmentManager
 
     private var arrowNode: ViewNode? = null
 
-    private var targetLat = 35.24812
-    private var targetLng = 33.02244
+    private var targetLat = 0.0
+    private var targetLng = 0.0
+    // Gelen hedef ismini tutacak değişken
+    private var targetName = "Hedef"
+
     private var lastBearingTo = 0f
     private var lastAzimuth = 0f
 
@@ -54,6 +54,8 @@ class ArNavigationActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // İsim ve Koordinatları Al
+        targetName = intent.getStringExtra("targetName") ?: "Hedef"
         targetLat = intent.getDoubleExtra("targetLat", 35.24812)
         targetLng = intent.getDoubleExtra("targetLng", 33.02244)
 
@@ -75,7 +77,6 @@ class ArNavigationActivity : AppCompatActivity() {
         locationHelper = LocationHelper(this)
         compassHelper = CompassHelper(this)
 
-        // Lifecycle yönetimi
         arView.lifecycle = lifecycle
 
         arView.configureSession { _, config ->
@@ -88,7 +89,6 @@ class ArNavigationActivity : AppCompatActivity() {
             infoText.text = "Hata: ${exception.message}"
         }
 
-        // 🔹 ViewAttachmentManager oluştur
         viewAttachmentManager = ViewAttachmentManager(this, arView)
         viewAttachmentManager.onResume()
 
@@ -114,7 +114,6 @@ class ArNavigationActivity : AppCompatActivity() {
             }
         }
 
-        // ⬅️ Yine addChild değil, addChildNode
         arView.addChildNode(arrowNode!!)
     }
 
@@ -144,7 +143,10 @@ class ArNavigationActivity : AppCompatActivity() {
                 res
             )
             lastBearingTo = res[1]
-            infoText.text = "Hedefe: ${res[0].toInt()}m"
+
+            // İsmi ve mesafeyi yazdır
+            infoText.text = "$targetName Hedefine: ${res[0].toInt()}m"
+
             updateArrowRotation()
         }
     }
