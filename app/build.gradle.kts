@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "com.example.ardeneme"
-    compileSdk = 35
+    compileSdk = 34 // Stabil SDK
 
     defaultConfig {
         applicationId = "com.example.ardeneme"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
     }
@@ -21,35 +21,29 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
-
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
-    kotlinOptions { jvmTarget = "17" }
-}
-
-// ARCore sürüm çakışmalarını önlemek için
-configurations.configureEach {
-    resolutionStrategy { force("com.google.ar:core:1.44.0") }
+    kotlinOptions { jvmTarget = "1.8" }
 }
 
 dependencies {
-    implementation("com.google.ar:core:1.44.0")
+    // SceneView 2.0.3 (En Güncel ve Stabil Sürüm)
+    implementation("io.github.sceneview:arsceneview:2.0.3")
 
-    // SceneView – AR Görüntüleme
-    val sceneviewVersion = "2.3.0"
-    implementation("io.github.sceneview:arsceneview:$sceneviewVersion")
-    implementation("io.github.sceneview:sceneview:$sceneviewVersion")
+    // ARCore
+    implementation("com.google.ar:core:1.41.0")
 
     // Temel Android
-    implementation("androidx.core:core-ktx:1.15.0")
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("com.google.android.material:material:1.12.0")
+    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("com.google.android.material:material:1.11.0")
 
-    // Konum Servisleri
-    implementation("com.google.android.gms:play-services-location:21.3.0")
+    // Konum ve Harita
+    implementation("com.google.android.gms:play-services-location:21.1.0")
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
 
-    // GOOGLE MAPS SDK
-    implementation("com.google.android.gms:play-services-maps:19.0.0")
+    // Lifecycle (lifecycleScope için)
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
 }

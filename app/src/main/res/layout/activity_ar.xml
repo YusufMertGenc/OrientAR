@@ -3,27 +3,23 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <!-- DİKKAT: Sınıf adı 'ARSceneView' (Büyük AR) -->
     <io.github.sceneview.ar.ARSceneView
         android:id="@+id/arView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- Bilgi Paneli -->
     <TextView
         android:id="@+id/infoText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:text="AR başlatılıyor..."
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:background="#80000000"
-        android:padding="8dp"/>
-
-    <!-- Okların Çizildiği Katman -->
-    <com.example.ardeneme.ui.OverlayView
-        android:id="@+id/overlayView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="wrap_content"
+        android:layout_margin="20dp"
+        android:text="Kamera Başlatılıyor..."
+        android:textColor="#FFFFFF"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:background="#80000000"
+        android:padding="10dp"/>
 
 </FrameLayout>

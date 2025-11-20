@@ -11,17 +11,14 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Kampüs Turu Butonu -> Haritayı açar
         findViewById<Button>(R.id.btnCampusTour).setOnClickListener {
             startActivity(Intent(this, CampusTourActivity::class.java))
         }
 
-        // Hazine Avı Butonu -> Oyunu açar
         findViewById<Button>(R.id.btnTreasureHunt).setOnClickListener {
             startActivity(Intent(this, TreasureHuntActivity::class.java))
         }
 
-        // Diğer butonlar (Şimdilik boş)
         findViewById<Button>(R.id.btnFaq).setOnClickListener {
             Toast.makeText(this, "Chatbot yakında...", Toast.LENGTH_SHORT).show()
         }

@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- İZİNLER -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
 
-    <!-- Donanım Gereksinimleri -->
     <uses-feature android:name="android.hardware.camera" android:required="true" />
     <uses-feature android:glEsVersion="0x00030000" android:required="true" />
 
@@ -20,12 +18,11 @@
 
         <meta-data android:name="com.google.ar.core" android:value="optional" />
 
-        <!-- BURAYA KENDİ API KEY'İNİ YAPIŞTIR -->
+        <!-- API KEY BURAYA -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="YOUR_API_KEY_HERE" />
+            android:value="API KEY BURAYA YAZILACAK" />
 
-        <!-- 1. ANA MENÜ -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -36,18 +33,14 @@
             </intent-filter>
         </activity>
 
-        <!-- 2. AR NAVİGASYON -->
         <activity
             android:name=".ArNavigationActivity"
-            android:screenOrientation="fullSensor"
-            android:configChanges="orientation|screenSize|keyboardHidden" />
+            android:screenOrientation="fullSensor" />
 
-        <!-- 3. KAMPÜS HARİTASI -->
         <activity
             android:name=".CampusTourActivity"
             android:screenOrientation="portrait" />
 
-        <!-- 4. HAZİNE AVI -->
         <activity
             android:name=".TreasureHuntActivity"
             android:screenOrientation="fullSensor" />
