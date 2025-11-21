@@ -4,7 +4,9 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:gravity="center"
-    android:background="@android:color/transparent">
+    android:background="@android:color/transparent"
+    android:clickable="true"
+    android:focusable="true">
 
     <ImageView
         android:layout_width="100dp"

@@ -9,14 +9,14 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import com.example.ardeneme.location.LocationHelper
-// SceneView 2.0.3
 import io.github.sceneview.ar.ARSceneView
 import io.github.sceneview.node.ViewNode
 import io.github.sceneview.math.Position
 import com.google.ar.core.Config
-import com.google.ar.sceneform.rendering.ViewAttachmentManager   // ⬅️ ÖNEMLİ: yeni import
+import com.google.ar.sceneform.rendering.ViewAttachmentManager
 import kotlinx.coroutines.launch
 
 class TreasureHuntActivity : AppCompatActivity() {
@@ -24,22 +24,20 @@ class TreasureHuntActivity : AppCompatActivity() {
     private lateinit var arView: ARSceneView
     private lateinit var infoText: TextView
     private lateinit var locationHelper: LocationHelper
-
-    // ViewNode için kendi AttachmentManager’ımız
     private lateinit var viewAttachmentManager: ViewAttachmentManager
 
     private var treasureNode: ViewNode? = null
     private var isTreasureFound = false
 
-    private val treasureLat = 35.24812
-    private val treasureLng = 33.02244
+    // YENİ KOORDİNAT
+    private val treasureLat = 35.24768615367886
+    private val treasureLng = 33.02281288777089
 
-    private val permLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
-            if (result.values.all { it }) {
-                initGame()
-            }
+    private val permLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+        if (result.values.all { it }) {
+            initGame()
         }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,10 +50,7 @@ class TreasureHuntActivity : AppCompatActivity() {
     }
 
     private fun checkPermissions() {
-        val perms = arrayOf(
-            Manifest.permission.CAMERA,
-            Manifest.permission.ACCESS_FINE_LOCATION
-        )
+        val perms = arrayOf(Manifest.permission.CAMERA, Manifest.permission.ACCESS_FINE_LOCATION)
         if (perms.all { ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED }) {
             initGame()
         } else {
@@ -65,11 +60,9 @@ class TreasureHuntActivity : AppCompatActivity() {
 
     private fun initGame() {
         locationHelper = LocationHelper(this)
-
-        // ARSceneView lifecycle
         arView.lifecycle = lifecycle
 
-        arView.configureSession { _, config ->
+        arView.configureSession { session, config ->
             config.focusMode = Config.FocusMode.AUTO
             config.planeFindingMode = Config.PlaneFindingMode.HORIZONTAL
             config.lightEstimationMode = Config.LightEstimationMode.AMBIENT_INTENSITY
@@ -79,7 +72,6 @@ class TreasureHuntActivity : AppCompatActivity() {
             infoText.text = "Hata: ${exception.message}"
         }
 
-        // 🔹 Kendi ViewAttachmentManager'ımızı oluşturuyoruz
         viewAttachmentManager = ViewAttachmentManager(this, arView)
         viewAttachmentManager.onResume()
 
@@ -88,30 +80,24 @@ class TreasureHuntActivity : AppCompatActivity() {
     }
 
     private fun setupTreasureObject() {
-        // 2.0.3 için tüm parametreler
         treasureNode = ViewNode(
             engine = arView.engine,
             modelLoader = arView.modelLoader,
-            viewAttachmentManager = viewAttachmentManager   // ⬅️ artık burası
+            viewAttachmentManager = viewAttachmentManager
         ).apply {
             isEditable = false
             position = Position(x = 0.0f, y = -0.5f, z = -2.0f)
             isVisible = false
 
             lifecycleScope.launch {
-                loadView(
-                    context = this@TreasureHuntActivity,
-                    layoutResId = R.layout.layout_ar_treasure
-                )
+                loadView(context = this@TreasureHuntActivity, layoutResId = R.layout.layout_ar_treasure)
             }
 
-            onSingleTapConfirmed = {
+            onSingleTapConfirmed = { event ->
                 collectTreasure()
                 true
             }
         }
-
-        // ⬅️ addChild YOK, 2.0.3'te addChildNode kullanılıyor
         arView.addChildNode(treasureNode!!)
     }
 
@@ -120,13 +106,7 @@ class TreasureHuntActivity : AppCompatActivity() {
             if (isTreasureFound) return@startLocationUpdates
 
             val results = FloatArray(1)
-            Location.distanceBetween(
-                loc.latitude,
-                loc.longitude,
-                treasureLat,
-                treasureLng,
-                results
-            )
+            Location.distanceBetween(loc.latitude, loc.longitude, treasureLat, treasureLng, results)
             val distance = results[0]
 
             if (distance < 15.0) {
@@ -151,6 +131,6 @@ class TreasureHuntActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        if (::locationHelper.isInitialized) locationHelper.stopLocationUpdates()
+        if(::locationHelper.isInitialized) locationHelper.stopLocationUpdates()
     }
 }

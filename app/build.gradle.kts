@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "com.example.ardeneme"
-    compileSdk = 34 // Stabil SDK
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.ardeneme"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
     }
@@ -22,28 +22,25 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions { jvmTarget = "1.8" }
+    kotlinOptions { jvmTarget = "17" }
 }
 
 dependencies {
-    // SceneView 2.0.3 (En Güncel ve Stabil Sürüm)
+    // SceneView 2.0.3 (Çalışan Sürüm)
     implementation("io.github.sceneview:arsceneview:2.0.3")
 
     // ARCore
-    implementation("com.google.ar:core:1.41.0")
+    implementation("com.google.ar:core:1.44.0")
 
     // Temel Android
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("com.google.android.material:material:1.11.0")
+    implementation("androidx.core:core-ktx:1.15.0")
+    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("com.google.android.material:material:1.12.0")
 
     // Konum ve Harita
-    implementation("com.google.android.gms:play-services-location:21.1.0")
-    implementation("com.google.android.gms:play-services-maps:18.2.0")
-
-    // Lifecycle (lifecycleScope için)
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation("com.google.android.gms:play-services-maps:19.0.0")
 }

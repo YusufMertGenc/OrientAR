@@ -11,6 +11,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.ardeneme.location.LocationHelper
 import com.example.ardeneme.sensors.CompassHelper
+// SceneView 2.0.3
 import io.github.sceneview.ar.ARSceneView
 import io.github.sceneview.node.ViewNode
 import io.github.sceneview.math.Position
@@ -30,13 +31,11 @@ class ArNavigationActivity : AppCompatActivity() {
 
     private var arrowNode: ViewNode? = null
 
-    private var targetLat = 0.0
-    private var targetLng = 0.0
-    // Gelen hedef ismini tutacak değişken
+    private var targetLat = 35.24812
+    private var targetLng = 33.02244
     private var targetName = "Hedef"
-
-    private var lastBearingTo = 0f
-    private var lastAzimuth = 0f
+    private var lastBearingTo = 0f      // konuma göre hedef yönü (derece)
+    private var lastAzimuth = 0f        // pusula azimutu (derece)
 
     private val locPermLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
@@ -44,8 +43,8 @@ class ArNavigationActivity : AppCompatActivity() {
         }
 
     private val camPermLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) {
-            if (it) {
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) {
                 initUi()
                 requestLocationPerms()
             }
@@ -54,7 +53,7 @@ class ArNavigationActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // İsim ve Koordinatları Al
+        // Intent verileri
         targetName = intent.getStringExtra("targetName") ?: "Hedef"
         targetLat = intent.getDoubleExtra("targetLat", 35.24812)
         targetLng = intent.getDoubleExtra("targetLng", 33.02244)
@@ -77,6 +76,7 @@ class ArNavigationActivity : AppCompatActivity() {
         locationHelper = LocationHelper(this)
         compassHelper = CompassHelper(this)
 
+        // ARSceneView lifecycle
         arView.lifecycle = lifecycle
 
         arView.configureSession { _, config ->
@@ -89,6 +89,7 @@ class ArNavigationActivity : AppCompatActivity() {
             infoText.text = "Hata: ${exception.message}"
         }
 
+        // ViewAttachmentManager – 2.0.3 için şart
         viewAttachmentManager = ViewAttachmentManager(this, arView)
         viewAttachmentManager.onResume()
 
@@ -103,6 +104,7 @@ class ArNavigationActivity : AppCompatActivity() {
             viewAttachmentManager = viewAttachmentManager
         ).apply {
             isEditable = false
+            // Kameranın önünde biraz aşağıda sabit bir nokta
             position = Position(x = 0.0f, y = -0.5f, z = -1.5f)
             rotation = Rotation(x = 0f, y = 0f, z = 0f)
 
@@ -114,6 +116,7 @@ class ArNavigationActivity : AppCompatActivity() {
             }
         }
 
+        // 2.0.3 → addChildNode
         arView.addChildNode(arrowNode!!)
     }
 
@@ -128,11 +131,13 @@ class ArNavigationActivity : AppCompatActivity() {
     }
 
     private fun startSensors() {
-        compassHelper.start { az ->
-            lastAzimuth = az
+        // Pusula
+        compassHelper.start { azimuth ->
+            lastAzimuth = azimuth
             updateArrowRotation()
         }
 
+        // Konum
         locationHelper.startLocationUpdates { loc ->
             val res = FloatArray(2)
             Location.distanceBetween(
@@ -142,23 +147,39 @@ class ArNavigationActivity : AppCompatActivity() {
                 targetLng,
                 res
             )
+            // res[0] = mesafe (metre), res[1] = hedefe bearing (derece)
             lastBearingTo = res[1]
-
-            // İsmi ve mesafeyi yazdır
-            infoText.text = "$targetName Hedefine: ${res[0].toInt()}m"
-
+            infoText.text = "$targetName Hedefine: ${res[0].toInt()} m"
             updateArrowRotation()
         }
     }
 
     private fun updateArrowRotation() {
         val node = arrowNode ?: return
+
+        // heading = hedef yönü - kullanıcının baktığı yön
         var heading = lastBearingTo - lastAzimuth
 
+        // [-180, 180] aralığına normalize
         while (heading < -180f) heading += 360f
         while (heading > 180f) heading -= 360f
 
+        // Arrow görüntüsü ekranda dönsün diye Z ekseninde döndürüyoruz
         node.rotation = Rotation(0f, 0f, -heading)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::viewAttachmentManager.isInitialized) {
+            viewAttachmentManager.onResume()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (::viewAttachmentManager.isInitialized) {
+            viewAttachmentManager.onPause()
+        }
     }
 
     override fun onDestroy() {

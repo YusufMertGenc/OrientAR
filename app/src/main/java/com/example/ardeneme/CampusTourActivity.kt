@@ -109,13 +109,13 @@ class CampusTourActivity : AppCompatActivity(), OnMapReadyCallback {
     private fun selectMode(arMode: Boolean) {
         isARMode = arMode
         if (arMode) {
-            // AR Seçili: AR butonu Kırmızı, Map butonu Gri
+            // AR Seçili: AR Kırmızı, Map Gri
             btnModeAR.setBackgroundColor(Color.parseColor("#D32F2F"))
             btnModeAR.setTextColor(Color.WHITE)
             btnModeMap.setBackgroundColor(Color.parseColor("#EEEEEE"))
             btnModeMap.setTextColor(Color.BLACK)
         } else {
-            // Map Seçili: Map butonu Kırmızı, AR butonu Gri
+            // Map Seçili: Map Kırmızı, AR Gri
             btnModeMap.setBackgroundColor(Color.parseColor("#D32F2F"))
             btnModeMap.setTextColor(Color.WHITE)
             btnModeAR.setBackgroundColor(Color.parseColor("#EEEEEE"))
